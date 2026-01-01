@@ -1,0 +1,29 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background circle -->
+  <circle cx="256" cy="256" r="256" fill="#10b981"/>
+  
+  <!-- Dollar sign / Money symbol -->
+  <g fill="white">
+    <!-- Vertical line -->
+    <rect x="240" y="120" width="32" height="272" rx="16"/>
+    
+    <!-- S shape (simplified dollar sign) -->
+    <path d="M 240 180 Q 240 140 280 140 Q 320 140 320 180 Q 320 200 300 220 L 240 220 Q 240 240 240 260 Q 240 300 280 300 Q 320 300 320 260" 
+          stroke="white" 
+          stroke-width="24" 
+          fill="none" 
+          stroke-linecap="round" 
+          stroke-linejoin="round"/>
+    
+    <!-- Horizontal lines -->
+    <rect x="200" y="180" width="80" height="8" rx="4"/>
+    <rect x="200" y="260" width="80" height="8" rx="4"/>
+  </g>
+  
+  <!-- Small decorative circles -->
+  <circle cx="150" cy="150" r="20" fill="white" opacity="0.3"/>
+  <circle cx="362" cy="150" r="20" fill="white" opacity="0.3"/>
+  <circle cx="150" cy="362" r="20" fill="white" opacity="0.3"/>
+  <circle cx="362" cy="362" r="20" fill="white" opacity="0.3"/>
+</svg>
+

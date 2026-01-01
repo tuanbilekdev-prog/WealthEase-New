@@ -1,0 +1,22 @@
+Format file .env yang benar:
+
+GOOGLE_CLIENT_ID=123456789-abcdefghijklmnop.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=GOCSPX-abcdefghijklmnopqrstuvwxyz
+JWT_SECRET=your-secret-key-here-change-in-production
+FRONTEND_URL=http://localhost:3000
+BACKEND_URL=http://localhost:5000
+
+PENTING:
+- Tidak ada spasi sebelum atau sesudah tanda =
+- Tidak ada tanda kutip (") di sekitar nilai
+- Setiap variabel di baris terpisah
+- Tidak ada baris kosong di antara variabel (atau minimal pastikan tidak ada masalah)
+- File harus disimpan dengan encoding UTF-8
+
+Contoh yang SALAH:
+GOOGLE_CLIENT_ID = "123456789..."  ❌ (ada spasi dan tanda kutip)
+GOOGLE_CLIENT_ID="123456789..."   ❌ (ada tanda kutip)
+
+Contoh yang BENAR:
+GOOGLE_CLIENT_ID=123456789-abcdefghijklmnop.apps.googleusercontent.com  ✅
+
