@@ -9,7 +9,7 @@ const getUserId = (req) => {
 
 export const createBill = async (req, res) => {
   try {
-    const { billName, amount, dueDate, category, description } = req.body;
+    const { billName, amount, dueDate, category, description, account } = req.body;
     const userId = getUserId(req);
 
     if (!userId) {
@@ -37,6 +37,11 @@ export const createBill = async (req, res) => {
       return res.status(400).json({ error: 'description is required' });
     }
 
+    // Validate account if provided
+    if (account && !['cash', 'ewallet', 'bank'].includes(account)) {
+      return res.status(400).json({ error: 'account must be one of: cash, ewallet, bank' });
+    }
+
     // Insert bill to Supabase
     const { data, error } = await supabase
       .from('bills')
@@ -48,6 +53,7 @@ export const createBill = async (req, res) => {
         category,
         description: description.trim(),
         completed: false,
+        account: account || 'cash',
       })
       .select()
       .single();
@@ -64,6 +70,7 @@ export const createBill = async (req, res) => {
       dueDate: data.due_date,
       category: data.category,
       description: data.description,
+      account: data.account,
       completed: data.completed,
       created_at: data.created_at,
     });
@@ -193,7 +200,7 @@ export const markBillAsCompleted = async (req, res) => {
       return res.status(500).json({ error: 'Failed to update bill' });
     }
 
-    res.json({ success: true, amount: updatedBill.amount });
+    res.json({ success: true, amount: updatedBill.amount, account: updatedBill.account });
   } catch (error) {
     console.error('Complete bill error:', error);
     res.status(500).json({ error: 'Internal server error' });

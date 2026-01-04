@@ -319,6 +319,9 @@ export const getAnalyticsSummary = async (req, res) => {
         highestExpenseCategory,
         weeklyTransactionCount: weekTransactions?.length || 0,
         transactionCount: transactions?.length || 0,
+        cashBalance: Number(summary.cash || 0),
+        ewalletBalance: Number(summary.ewallet || 0),
+        bankBalance: Number(summary.bank || 0),
       },
       charts: {
         balanceTrend: lineChart,

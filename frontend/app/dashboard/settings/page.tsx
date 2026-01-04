@@ -6,6 +6,7 @@ import UserProfile from '@/components/UserProfile'
 import ThemeSwitcher from '@/components/ThemeSwitcher'
 import ClearDataModal from '@/components/settings/ClearDataModal'
 import AvatarPicker from '@/components/settings/AvatarPicker'
+import AvatarUpload from '@/components/AvatarUpload'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
 
@@ -23,6 +24,13 @@ function SettingsContent() {
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
   const [user, setUser] = useState<User | null>(null)
   const [userLoading, setUserLoading] = useState(true)
+  const [userAvatar, setUserAvatar] = useState<string | null>(null)
+
+  const handleAvatarUpdate = (newAvatarUrl: string) => {
+    setUserAvatar(newAvatarUrl)
+    // Refresh the page to show new avatar everywhere
+    window.location.reload()
+  }
 
   const handleLogout = () => {
     localStorage.removeItem('token')
@@ -121,6 +129,18 @@ function SettingsContent() {
             {feedback.message}
           </div>
         )}
+
+        {/* Upload Your Own Photo Section */}
+        <div className="bg-white dark:bg-[#1E1E1E] rounded-3xl shadow-lg p-6 border border-gray-200 dark:border-gray-700">
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Upload Your Photo</h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+            Upload your own profile picture to personalize your account
+          </p>
+          <AvatarUpload 
+            currentAvatar={userAvatar}
+            onAvatarUpdate={handleAvatarUpdate}
+          />
+        </div>
 
         <AvatarPicker user={user} loading={userLoading} />
 

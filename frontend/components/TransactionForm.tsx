@@ -2,6 +2,8 @@
 
 import { useState } from 'react'
 
+import CustomSelect from './CustomSelect'
+
 type TransactionType = 'income' | 'expense'
 
 export interface TransactionPayload {
@@ -24,6 +26,7 @@ type FormState = {
   category: string
   description: string
   date: string
+  account: string
 }
 
 export default function TransactionForm({ onSubmit }: TransactionFormProps) {
@@ -34,6 +37,7 @@ export default function TransactionForm({ onSubmit }: TransactionFormProps) {
     category: '',
     description: '',
     date: '',
+    account: 'cash',
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -98,6 +102,7 @@ export default function TransactionForm({ onSubmit }: TransactionFormProps) {
         category: '',
         description: '',
         date: '',
+        account: 'cash',
       })
     } catch (err) {
       console.error(err)
@@ -141,6 +146,24 @@ export default function TransactionForm({ onSubmit }: TransactionFormProps) {
           className="w-full rounded-xl border border-light-border dark:border-dark-border bg-light-bg dark:bg-dark-bg text-light-text dark:text-dark-text px-4 py-2 focus:ring-2 focus:ring-light-primary dark:focus:ring-dark-primary focus:outline-none"
           placeholder="e.g., Monthly salary"
           required
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-light-text-secondary dark:text-dark-text-secondary mb-1">
+          Account
+        </label>
+        <CustomSelect
+          value={formData.account}
+          onChange={(value) =>
+            setFormData((prev) => ({ ...prev, account: value }))
+          }
+          options={[
+            { value: 'cash', label: 'Cash', icon: '💵' },
+            { value: 'ewallet', label: 'E-Wallet', icon: '📱' },
+            { value: 'bank', label: 'Bank', icon: '🏦' },
+          ]}
+          dropUp={true}
         />
       </div>
 
@@ -232,11 +255,13 @@ export default function TransactionForm({ onSubmit }: TransactionFormProps) {
         />
       </div>
 
-      {error && (
-        <p className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg">
-          {error}
-        </p>
-      )}
+      {
+        error && (
+          <p className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg">
+            {error}
+          </p>
+        )
+      }
 
       <button
         type="submit"
@@ -245,7 +270,7 @@ export default function TransactionForm({ onSubmit }: TransactionFormProps) {
       >
         {loading ? 'Saving...' : 'Add Transaction'}
       </button>
-    </form>
+    </form >
   )
 }
 

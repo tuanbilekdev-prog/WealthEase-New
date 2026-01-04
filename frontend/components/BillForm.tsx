@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import CustomSelect from './CustomSelect'
 
 type BillCategory = 'utilities' | 'subscription' | 'rent' | 'food' | 'others'
 
@@ -10,6 +11,7 @@ export interface BillPayload {
   dueDate: string
   category: BillCategory
   description: string
+  account: string
 }
 
 interface BillFormProps {
@@ -32,6 +34,7 @@ export default function BillForm({ onSubmit, initialValues }: BillFormProps) {
     dueDate: initialValues?.dueDate || '',
     category: initialValues?.category || 'utilities',
     description: initialValues?.description || '',
+    account: initialValues?.account || 'ewallet',
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -45,6 +48,7 @@ export default function BillForm({ onSubmit, initialValues }: BillFormProps) {
         dueDate: initialValues.dueDate || prev.dueDate,
         category: initialValues.category || prev.category,
         description: initialValues.description || prev.description,
+        account: initialValues.account || prev.account,
       }))
     }
   }, [initialValues])
@@ -78,6 +82,7 @@ export default function BillForm({ onSubmit, initialValues }: BillFormProps) {
         dueDate: formData.dueDate,
         category: formData.category,
         description: formData.description.trim(),
+        account: formData.account,
       })
 
       setFormData({
@@ -86,6 +91,7 @@ export default function BillForm({ onSubmit, initialValues }: BillFormProps) {
         dueDate: '',
         category: 'utilities',
         description: '',
+        account: 'ewallet',
       })
     } catch (err) {
       console.error(err)
@@ -147,6 +153,24 @@ export default function BillForm({ onSubmit, initialValues }: BillFormProps) {
 
       <div>
         <label className="block text-sm font-medium text-light-text-secondary dark:text-dark-text-secondary mb-1">
+          Account
+        </label>
+        <CustomSelect
+          value={formData.account}
+          onChange={(value) =>
+            setFormData((prev) => ({ ...prev, account: value }))
+          }
+          options={[
+            { value: 'cash', label: 'Cash', icon: '💵' },
+            { value: 'ewallet', label: 'E-Wallet', icon: '📱' },
+            { value: 'bank', label: 'Bank', icon: '🏦' },
+          ]}
+          dropUp={true}
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-light-text-secondary dark:text-dark-text-secondary mb-1">
           Category
         </label>
         <select
@@ -178,11 +202,13 @@ export default function BillForm({ onSubmit, initialValues }: BillFormProps) {
         />
       </div>
 
-      {error && (
-        <p className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg">
-          {error}
-        </p>
-      )}
+      {
+        error && (
+          <p className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg">
+            {error}
+          </p>
+        )
+      }
 
       <button
         type="submit"
@@ -191,7 +217,7 @@ export default function BillForm({ onSubmit, initialValues }: BillFormProps) {
       >
         {loading ? 'Saving...' : 'Add Smart Bill'}
       </button>
-    </form>
+    </form >
   )
 }
 

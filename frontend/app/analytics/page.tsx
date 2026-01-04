@@ -25,6 +25,9 @@ type AnalyticsStats = {
   highestExpenseCategory: { category: string; amount: number }
   weeklyTransactionCount: number
   transactionCount: number
+  cashBalance: number
+  ewalletBalance: number
+  bankBalance: number
 }
 
 type Transaction = {
@@ -189,6 +192,24 @@ export default function AnalyticsPage() {
         icon: '💸',
       },
       {
+        title: 'Cash',
+        value: formatCurrency(stats.cashBalance),
+        subtitle: 'Available Cash',
+        icon: '💵',
+      },
+      {
+        title: 'E-Wallet',
+        value: formatCurrency(stats.ewalletBalance),
+        subtitle: 'Digital Balance',
+        icon: '📱',
+      },
+      {
+        title: 'Bank',
+        value: formatCurrency(stats.bankBalance),
+        subtitle: 'Bank Account',
+        icon: '🏦',
+      },
+      {
         title: 'Spending Rate',
         value: `${stats.spendingRate}%`,
         subtitle: 'Income vs Expense',
@@ -258,6 +279,8 @@ export default function AnalyticsPage() {
         )}
 
         <StatsCards stats={statsCards} />
+
+
 
         <section className="grid gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2 bg-white dark:bg-[#1E1E1E] rounded-3xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm">

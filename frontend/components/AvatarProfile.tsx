@@ -8,6 +8,7 @@ interface AvatarProfileProps {
   userName?: string
   userEmail?: string
   googleImageUrl?: string | null
+  avatarUrl?: string | null // Add custom uploaded avatar
   avatarSelected?: number | null
   size?: 'sm' | 'md' | 'lg' | 'xl'
   className?: string
@@ -18,17 +19,19 @@ export default function AvatarProfile({
   userName,
   userEmail,
   googleImageUrl,
+  avatarUrl: initialAvatarUrl,
   avatarSelected: initialAvatarSelected,
   size = 'md',
   className = '',
 }: AvatarProfileProps) {
   const [avatarSelected, setAvatarSelected] = useState<number | null>(initialAvatarSelected || null)
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(initialAvatarUrl || null)
   const [loading, setLoading] = useState(false)
 
   // Fetch avatar selection from API if userId is provided
   useEffect(() => {
     const fetchAvatar = async () => {
-      if (!userId || initialAvatarSelected !== undefined) {
+      if (!userId || (initialAvatarSelected !== undefined && initialAvatarUrl !== undefined)) {
         return
       }
 
@@ -46,7 +49,9 @@ export default function AvatarProfile({
 
         if (response.ok) {
           const userData = await response.json()
-          if (userData.avatar_selected) {
+          if (userData.avatar_url) {
+            setAvatarUrl(userData.avatar_url)
+          } else if (userData.avatar_selected) {
             setAvatarSelected(userData.avatar_selected)
           }
         }
@@ -58,7 +63,7 @@ export default function AvatarProfile({
     }
 
     fetchAvatar()
-  }, [userId, initialAvatarSelected])
+  }, [userId, initialAvatarSelected, initialAvatarUrl])
 
   // Size classes
   const sizeClasses = {
@@ -87,10 +92,11 @@ export default function AvatarProfile({
     return '?'
   }
 
-  // Priority: preset avatar > google image > initial letter
+  // Priority: uploaded avatar > preset avatar > google image > initial letter
+  const hasUploadedAvatar = avatarUrl !== null && avatarUrl !== ''
   const hasCustomAvatar = avatarSelected !== null && avatarSelected > 0
-  const displayImage = googleImageUrl && !hasCustomAvatar ? googleImageUrl : null
-  const showPlaceholder = !hasCustomAvatar && !displayImage && !loading
+  const displayImage = !hasUploadedAvatar && googleImageUrl && !hasCustomAvatar ? googleImageUrl : null
+  const showPlaceholder = !hasUploadedAvatar && !hasCustomAvatar && !displayImage && !loading
 
   if (loading) {
     return (
@@ -102,7 +108,17 @@ export default function AvatarProfile({
 
   return (
     <div className={`${sizeClasses[size]} rounded-full overflow-hidden flex-shrink-0 ${className}`}>
-      {hasCustomAvatar ? (
+      {hasUploadedAvatar ? (
+        <img
+          src={avatarUrl!}
+          alt={userName || 'Profile picture'}
+          className="w-full h-full object-cover"
+          onError={() => {
+            // If image fails to load, fallback to preset avatar or placeholder
+            setAvatarUrl(null)
+          }}
+        />
+      ) : hasCustomAvatar ? (
         <div className="w-full h-full bg-gradient-to-br from-emerald-500/10 to-emerald-600/10 dark:from-emerald-500/20 dark:to-emerald-600/20 flex items-center justify-center border border-emerald-500/20 dark:border-emerald-400/20">
           <CustomAvatarSVG 
             avatarId={avatarSelected!} 

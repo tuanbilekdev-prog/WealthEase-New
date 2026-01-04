@@ -7,6 +7,7 @@ import BalanceCard from '@/components/BalanceCard'
 import RecentTransactions, {
   Transaction,
 } from '@/components/RecentTransactions'
+import AvatarProfile from '@/components/AvatarProfile'
 
 type Bill = {
   id: string
@@ -26,6 +27,9 @@ function DashboardContent() {
     total_income: number
     total_expense: number
     balance: number
+    cash: number
+    ewallet: number
+    bank: number
   } | null>(null)
   const [recentTransactions, setRecentTransactions] = useState<Transaction[]>([])
   const [financialLoading, setFinancialLoading] = useState(true)
@@ -231,6 +235,7 @@ function DashboardContent() {
             category: 'Bills',
             name: bill.billName,
             date: new Date().toISOString(), // Use current timestamp instead of due date
+            account: (bill as any).account || 'cash', // Use bill's account
           }),
         })
 
@@ -269,6 +274,13 @@ function DashboardContent() {
           <div className="flex justify-between items-center h-16">
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">WealthEase</h1>
             <div className="flex items-center gap-3">
+              <AvatarProfile 
+                userId={user?.email}
+                userName={user?.name}
+                userEmail={user?.email}
+                size="md"
+                className="cursor-pointer"
+              />
               <Link
                 href="/dashboard/settings"
                 className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 rounded-lg transition"
@@ -334,7 +346,13 @@ function DashboardContent() {
               <BalanceCard
                 totalIncome={summary?.total_income ?? 0}
                 totalExpense={summary?.total_expense ?? 0}
+                totalExpense={summary?.total_expense ?? 0}
                 balance={summary?.balance ?? 0}
+                accounts={{
+                  cash: summary?.cash ?? 0,
+                  ewallet: summary?.ewallet ?? 0,
+                  bank: summary?.bank ?? 0,
+                }}
               />
 
               <div className="bg-white dark:bg-[#121212] rounded-3xl p-4 border border-gray-200 dark:border-gray-700 h-full flex flex-col">

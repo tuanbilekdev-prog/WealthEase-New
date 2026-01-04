@@ -57,17 +57,19 @@ export const getCurrentUser = async (req, res) => {
       }
     }
 
-    // Get avatar selection from profiles table
+    // Get avatar selection and avatar_url from profiles table
     let avatarSelected = null
+    let avatarUrl = null
     try {
       const { data: profile } = await supabase
         .from('profiles')
-        .select('avatar_selected')
+        .select('avatar_selected, avatar_url')
         .eq('user_id', userId)
         .single()
       
-      if (profile?.avatar_selected) {
+      if (profile) {
         avatarSelected = profile.avatar_selected
+        avatarUrl = profile.avatar_url
       }
     } catch (err) {
       // Profile might not exist yet, that's okay
@@ -79,6 +81,7 @@ export const getCurrentUser = async (req, res) => {
       name: user.name,
       role: user.role,
       avatar_selected: avatarSelected,
+      avatar_url: avatarUrl,
     });
   } catch (error) {
     console.error('Get user error:', error);

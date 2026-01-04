@@ -1,6 +1,6 @@
 import { supabase, getServiceRoleClient } from '../config/supabaseClient.js';
 
-const validateTransactionPayload = ({ type, amount, name, category, description, date }) => {
+const validateTransactionPayload = ({ type, amount, name, category, description, date, account }, req = { body: {} }) => {
   if (!type || !['income', 'expense'].includes(type)) {
     return 'type must be income or expense';
   }
@@ -29,6 +29,11 @@ const validateTransactionPayload = ({ type, amount, name, category, description,
     }
   }
 
+  // Validate account
+  if (req.body.account && !['cash', 'ewallet', 'bank'].includes(req.body.account)) {
+    return 'account must be one of: cash, ewallet, bank';
+  }
+
   return null;
 };
 
@@ -41,11 +46,11 @@ const getUserId = (req) => {
 const ensureUserExists = async (userId, email, name, role = 'user') => {
   try {
     console.log(`🔍 [Transaction] Checking if user exists: ${userId} (${email})`);
-    
+
     // Use service role client for operations that need to bypass RLS
     const adminClient = getServiceRoleClient();
     console.log(`🔑 [Transaction] Using admin client (service_role key) for database operations`);
-    
+
     // First, check if user exists by email (more reliable than ID)
     const { data: userByEmail, error: emailCheckError } = await adminClient
       .from('users')
@@ -84,7 +89,7 @@ const ensureUserExists = async (userId, email, name, role = 'user') => {
     // If user doesn't exist (PGRST116 = no rows returned), create them
     if (checkError && checkError.code === 'PGRST116') {
       console.log(`📝 [Transaction] User not found, creating new user: ${email} (ID: ${userId})`);
-      
+
       // Try to insert new user using service role client (bypasses RLS)
       const { data: newUser, error: insertError } = await adminClient
         .from('users')
@@ -104,27 +109,27 @@ const ensureUserExists = async (userId, email, name, role = 'user') => {
         console.error('   Error message:', insertError.message);
         console.error('   Error details:', insertError.details);
         console.error('   Error hint:', insertError.hint);
-        
+
         // If it's a unique constraint violation, user might have been created by another request
         if (insertError.code === '23505') {
           console.log(`🔄 [Transaction] Unique constraint violation, checking if user now exists...`);
-          
+
           // Re-check if user exists now (might have been created by concurrent request)
           const { data: recheckUser } = await adminClient
             .from('users')
             .select('id, email')
             .eq('email', email)
             .single();
-          
+
           if (recheckUser) {
             console.log(`✅ [Transaction] User now exists (created by concurrent request): ${recheckUser.id}`);
             return; // User exists now, continue
           }
         }
-        
+
         throw new Error(`User not found in database and failed to create user: ${insertError.message}`);
       }
-      
+
       console.log(`✅ [Transaction] User created successfully: ${userId} (${email})`);
       return;
     } else if (checkError) {
@@ -141,7 +146,7 @@ const ensureUserExists = async (userId, email, name, role = 'user') => {
 
 export const addTransaction = async (req, res) => {
   try {
-    const { type, amount, description, name, category, date } = req.body;
+    const { type, amount, description, name, category, date, account } = req.body;
     const userId = getUserId(req);
     const email = req.user?.email || userId;
     const userName = req.user?.name || email?.split('@')[0] || 'User';
@@ -166,9 +171,9 @@ export const addTransaction = async (req, res) => {
       console.error('❌ [Transaction] User creation/verification error:', userError);
       console.error('   Error message:', userError.message);
       console.error('   Error stack:', userError.stack);
-      return res.status(500).json({ 
+      return res.status(500).json({
         error: 'Failed to verify user account. Please try logging in again.',
-        details: userError.message 
+        details: userError.message
       });
     }
 
@@ -179,6 +184,7 @@ export const addTransaction = async (req, res) => {
       category,
       description,
       date,
+      account,
     });
 
     if (validationError) {
@@ -198,40 +204,41 @@ export const addTransaction = async (req, res) => {
         category: category.trim(),
         description: description.trim(),
         date: parsedDate.toISOString(),
+        account: account || 'cash',
       })
       .select()
       .single();
 
     if (error) {
       console.error('Supabase insert error:', error);
-      
+
       // Handle specific error cases
       if (error.code === '23503') { // Foreign key violation
-        return res.status(400).json({ 
+        return res.status(400).json({
           error: 'User account not found. Please try logging in again.',
           details: 'The user account does not exist in the database.'
         });
       }
-      
+
       if (error.code === '23505') { // Unique violation
-        return res.status(400).json({ 
+        return res.status(400).json({
           error: 'Transaction already exists.',
-          details: error.message 
+          details: error.message
         });
       }
 
-      return res.status(500).json({ 
-        error: 'Failed to create transaction', 
-        details: error.message 
+      return res.status(500).json({
+        error: 'Failed to create transaction',
+        details: error.message
       });
     }
 
     return res.status(201).json(data);
   } catch (error) {
     console.error('Add transaction error:', error);
-    return res.status(500).json({ 
+    return res.status(500).json({
       error: 'Internal server error',
-      details: error.message 
+      details: error.message
     });
   }
 };
@@ -308,16 +315,23 @@ export const calculateSummary = async (userId) => {
       return await calculateSummaryFromTransactions(userId);
     }
 
+    // Always calculate account balances from transactions since they aren't in the balance table
+    const accountSummary = await calculateSummaryFromTransactions(userId);
+
     if (balanceData) {
+      // Use totals from balance table but combine with account breakdown
       return {
         total_income: parseFloat(balanceData.total_income || 0),
         total_expense: parseFloat(balanceData.total_expense || 0),
         balance: parseFloat(balanceData.current_balance || 0),
+        cash: accountSummary.cash,
+        ewallet: accountSummary.ewallet,
+        bank: accountSummary.bank
       };
     }
 
-    // If no balance record exists, calculate from transactions
-    return await calculateSummaryFromTransactions(userId);
+    // If no balance record exists, return the full calculated summary
+    return accountSummary;
   } catch (error) {
     console.error('Calculate summary error:', error);
     return { total_income: 0, total_expense: 0, balance: 0 };
@@ -329,7 +343,7 @@ const calculateSummaryFromTransactions = async (userId) => {
   try {
     const { data: transactions, error } = await supabase
       .from('transactions')
-      .select('type, amount')
+      .select('type, amount, account')
       .eq('user_id', userId);
 
     if (error) {
@@ -351,7 +365,26 @@ const calculateSummaryFromTransactions = async (userId) => {
     );
 
     summary.balance = summary.total_income - summary.total_expense;
-    return summary;
+
+    // Calculate account balances from transactions
+    const accountBalances = (transactions || []).reduce(
+      (acc, t) => {
+        const amt = parseFloat(t.amount || 0);
+        const acct = t.account || 'cash'; // default to cash if null
+
+        if (['cash', 'ewallet', 'bank'].includes(acct)) {
+          if (t.type === 'income') {
+            acc[acct] += amt;
+          } else {
+            acc[acct] -= amt;
+          }
+        }
+        return acc;
+      },
+      { cash: 0, ewallet: 0, bank: 0 }
+    );
+
+    return { ...summary, ...accountBalances };
   } catch (error) {
     console.error('Calculate from transactions error:', error);
     return { total_income: 0, total_expense: 0, balance: 0 };
@@ -374,7 +407,7 @@ export const getSummary = async (req, res) => {
   }
 };
 
-export const addExpenseEntry = async ({ amount, description, name = 'Bill Payment', category = 'Bills', date, userId }) => {
+export const addExpenseEntry = async ({ amount, description, name = 'Bill Payment', category = 'Bills', date, userId, account = 'cash' }) => {
   try {
     if (!userId) {
       throw new Error('User ID is required');
@@ -404,6 +437,7 @@ export const addExpenseEntry = async ({ amount, description, name = 'Bill Paymen
         category: category.trim(),
         description: (description || 'Auto deduction').trim(),
         date: date ? new Date(date).toISOString() : new Date().toISOString(),
+        account: account,
       })
       .select()
       .single();

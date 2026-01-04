@@ -19,6 +19,7 @@ export default function AIChatModal({ isOpen, onClose }: AIChatModalProps) {
   const [error, setError] = useState<string | null>(null)
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
+  console.log('AIChatModal API_URL:', API_URL); // Debugging log
 
   useEffect(() => {
     if (isOpen) {
@@ -29,14 +30,14 @@ export default function AIChatModal({ isOpen, onClose }: AIChatModalProps) {
         return
       }
       setToken(storedToken)
-      
+
       // Disable body scroll when modal is open
       document.body.style.overflow = 'hidden'
     } else {
       // Re-enable body scroll when modal is closed
       document.body.style.overflow = 'unset'
     }
-    
+
     // Cleanup: re-enable scroll when component unmounts
     return () => {
       document.body.style.overflow = 'unset'
@@ -121,11 +122,11 @@ export default function AIChatModal({ isOpen, onClose }: AIChatModalProps) {
       if (!contentType || !contentType.includes('application/json')) {
         const text = await response.text()
         console.error('Non-JSON response:', text.substring(0, 200))
-        
+
         if (response.status === 404) {
           throw new Error('Endpoint tidak ditemukan. Pastikan backend server sudah di-restart dan route /api/ai-chat/chat tersedia.')
         }
-        
+
         throw new Error(`Server mengembalikan response non-JSON (Status: ${response.status}). Pastikan backend server berjalan dengan benar.`)
       }
 
@@ -194,7 +195,7 @@ export default function AIChatModal({ isOpen, onClose }: AIChatModalProps) {
       }
     } catch (err: any) {
       console.error('Error sending message:', err)
-      
+
       // Better error message
       let errorMessage = 'Gagal mengirim pesan'
       if (err.message) {
@@ -202,9 +203,9 @@ export default function AIChatModal({ isOpen, onClose }: AIChatModalProps) {
       } else if (err instanceof TypeError && err.message.includes('fetch')) {
         errorMessage = 'Tidak dapat terhubung ke server. Pastikan backend server berjalan di http://localhost:5000'
       }
-      
+
       setError(errorMessage)
-      
+
       // Remove user message on error
       setMessages(prev => prev.filter(msg => msg.id !== userMessage.id))
     } finally {
@@ -223,7 +224,7 @@ export default function AIChatModal({ isOpen, onClose }: AIChatModalProps) {
       />
 
       {/* Modal */}
-      <div 
+      <div
         className="relative w-full max-w-2xl h-[85vh] max-h-[700px] bg-white dark:bg-[#1E1E1E] rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 flex flex-col z-10 transform transition-all duration-300 scale-100"
         onClick={(e) => e.stopPropagation()}
         onWheel={(e) => {
