@@ -62,15 +62,47 @@ export const uploadAvatar = async (req, res) => {
     const avatarUrl = urlData.publicUrl;
     console.log('✅ [Profile] Public URL:', avatarUrl);
 
-    // Update user profile with avatar URL in profiles table
-    const { error: updateError } = await adminClient
+    // Check if profile exists, create if not
+    const { data: existingProfile, error: checkError } = await adminClient
       .from('profiles')
-      .update({ avatar_url: avatarUrl })
-      .eq('user_id', userId);
+      .select('user_id')
+      .eq('user_id', userId)
+      .single();
 
-    if (updateError) {
-      console.error('❌ [Profile] Update profile error:', updateError);
-      return res.status(500).json({ error: 'Failed to update profile: ' + updateError.message });
+    if (checkError && checkError.code === 'PGRST116') {
+      // Profile doesn't exist, create it
+      console.log('📝 [Profile] Profile does not exist, creating...');
+      const { error: createError } = await adminClient
+        .from('profiles')
+        .insert({
+          user_id: userId,
+          avatar_url: avatarUrl,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
+
+      if (createError) {
+        console.error('❌ [Profile] Create profile error:', createError);
+        return res.status(500).json({ error: 'Failed to create profile: ' + createError.message });
+      }
+
+      console.log('✅ [Profile] Profile created successfully');
+    } else if (checkError) {
+      console.error('❌ [Profile] Check profile error:', checkError);
+      return res.status(500).json({ error: 'Failed to check profile: ' + checkError.message });
+    } else {
+      // Profile exists, update it
+      const { error: updateError } = await adminClient
+        .from('profiles')
+        .update({ avatar_url: avatarUrl, updated_at: new Date().toISOString() })
+        .eq('user_id', userId);
+
+      if (updateError) {
+        console.error('❌ [Profile] Update profile error:', updateError);
+        return res.status(500).json({ error: 'Failed to update profile: ' + updateError.message });
+      }
+
+      console.log('✅ [Profile] Profile updated successfully');
     }
 
     console.log('✅ [Profile] Profile updated successfully');
