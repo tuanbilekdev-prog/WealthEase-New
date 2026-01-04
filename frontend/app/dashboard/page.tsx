@@ -346,7 +346,6 @@ function DashboardContent() {
               <BalanceCard
                 totalIncome={summary?.total_income ?? 0}
                 totalExpense={summary?.total_expense ?? 0}
-                totalExpense={summary?.total_expense ?? 0}
                 balance={summary?.balance ?? 0}
                 accounts={{
                   cash: summary?.cash ?? 0,
